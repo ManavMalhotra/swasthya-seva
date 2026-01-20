@@ -51,10 +51,7 @@ export default function ChatBot() {
         setIsLoading(true);
 
         try {
-            // Simulate/Call AI text response (If purely text)
             const modelResponse = "I process prescriptions best! Please upload an image if you need medication reminders.";
-            // TODO: Hook up text chat to Gemini if needed, currently focusing on Image as requested.
-
             setMessages((prev) => [
                 ...prev,
                 { id: Date.now().toString(), type: "bot", content: modelResponse },

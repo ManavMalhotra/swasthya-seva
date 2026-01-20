@@ -1,140 +1,143 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { app } from "@/lib/firebase";
-import { getDatabase, onValue, ref } from "firebase/database";
-import { useRouter } from "next/navigation";
-import ChatBot from "@/components/ChatBot";
-import { Bell, Calendar, LogOut, Pill } from "lucide-react";
+import { ref, get } from "firebase/database";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/components/providers/AuthProvider";
+import DoctorDashboard from "@/components/DoctorDashboard";
+import PatientDashboard from "@/components/PatientDashboard";
+import {
+  PatientHealthData,
+  PatientUser,
+  DoctorUser,
+  isPatientUser,
+  isDoctorUser
+} from "@/types";
 
-export default function Dashboard() {
-    const [user, setUser] = useState<any>(null);
-    const [remindersCount, setRemindersCount] = useState(0);
-    const [nextReminder, setNextReminder] = useState<any>(null);
-    const router = useRouter();
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [patientsList, setPatientsList] = useState<PatientHealthData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-            if (!authUser) {
-                router.push("/");
-            } else {
-                setUser(authUser);
-            }
-        });
-        return () => unsubscribe();
-    }, [auth, router]);
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-    useEffect(() => {
-        if (user) {
-            const remindersRef = ref(db, `reminders/${user.uid}`);
-            onValue(remindersRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const list = Object.values(data);
-                    setRemindersCount(list.length);
-                    // Simple logic to just show the first active one for MVP
-                    const active = list.find((r: any) => r.status === 'active');
-                    setNextReminder(active);
-                } else {
-                    setRemindersCount(0);
-                    setNextReminder(null);
-                }
+      try {
+        // Doctor: Fetch only assigned patients
+        if (isDoctorUser(user)) {
+          const doctorUser = user as DoctorUser;
+          const assignedPatientIds = Object.keys(doctorUser.assignedPatients || {});
+
+          if (assignedPatientIds.length > 0) {
+            // First, fetch all users to lookup patient names by patientDataId
+            const usersSnap = await get(ref(db, "users"));
+            const usersData: Record<string, {
+              displayName?: string;
+              patientDataId?: string;
+              profile?: {
+                firstName?: string;
+                lastName?: string;
+                dob?: string;
+                gender?: string;
+              }
+            }> = usersSnap.exists() ? usersSnap.val() : {};
+
+            // Create a lookup map: patientDataId -> user info
+            const patientIdToUserInfo: Record<string, {
+              name: string;
+              dob?: string;
+              gender?: string;
+            }> = {};
+
+            Object.values(usersData).forEach((u) => {
+              if (u.patientDataId) {
+                const firstName = u.profile?.firstName || "";
+                const lastName = u.profile?.lastName || "";
+                const fullName = `${firstName} ${lastName}`.trim() || u.displayName || "Unknown";
+                patientIdToUserInfo[u.patientDataId] = {
+                  name: fullName,
+                  dob: u.profile?.dob,
+                  gender: u.profile?.gender,
+                };
+              }
             });
+
+            // Fetch each assigned patient's health data and enrich with user info
+            const patientPromises = assignedPatientIds.map(async (patientDataId) => {
+              const snap = await get(ref(db, `patients/${patientDataId}`));
+              if (snap.exists()) {
+                const patientData = snap.val();
+                const userInfo = patientIdToUserInfo[patientDataId];
+
+                return {
+                  ...patientData,
+                  id: patientDataId,
+                  // Enrich with user profile data
+                  name: userInfo?.name || patientData.name || "Unknown",
+                  dob: userInfo?.dob || patientData.dob,
+                  gender: userInfo?.gender || patientData.gender,
+                  conditions: patientData.conditions || [],
+                  medications: patientData.medications || [],
+                  vitalsHistory: patientData.vitalsHistory || {},
+                  healthScoreHistory: patientData.healthScoreHistory || [],
+                } as PatientHealthData;
+              }
+              return null;
+            });
+
+            const patients = (await Promise.all(patientPromises)).filter(Boolean) as PatientHealthData[];
+            setPatientsList(patients);
+          }
         }
-    }, [user, db]);
+      } catch (err) {
+        console.error("Dashboard load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-    const handleLogout = async () => {
-        await signOut(auth);
-        router.push("/");
-    };
+    fetchData();
+  }, [user]);
 
-    if (!user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-
+  if (!user) {
     return (
-        <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8 bg-gray-50/50">
-            <div className="max-w-7xl mx-auto space-y-6">
-
-                {/* Header */}
-                <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.displayName}</h1>
-                        <p className="text-gray-500">Here is your daily health overview.</p>
-                    </div>
-                    <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                        <LogOut className="w-4 h-4" /> Sign Out
-                    </button>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                        onClick={() => router.push('/dashboard/reminders')}
-                        className="bg-gradient-to-br from-teal-500 to-emerald-600 p-6 rounded-2xl shadow-lg text-white cursor-pointer hover:shadow-xl transition transform hover:scale-[1.02]"
-                    >
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-white/20 rounded-lg"><Bell className="w-6 h-6" /></div>
-                            <h3 className="font-semibold text-lg">Next Reminder</h3>
-                        </div>
-                        {nextReminder ? (
-                            <>
-                                <p className="text-3xl font-bold">{Array.isArray(nextReminder.times) ? nextReminder.times[0] : nextReminder.times}</p>
-                                <p className="text-teal-100 mt-1">{nextReminder.medicineName} ({nextReminder.dosage})</p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="text-xl font-bold">All caught up!</p>
-                                <p className="text-teal-100 mt-1">No pending meds</p>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Calendar className="w-6 h-6" /></div>
-                            <h3 className="font-semibold text-lg text-gray-900">Appointments</h3>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">0</p>
-                        <p className="text-gray-500 mt-1">No upcoming appointments</p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><Pill className="w-6 h-6" /></div>
-                            <h3 className="font-semibold text-lg text-gray-900">Active Meds</h3>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">{remindersCount}</p>
-                        <p className="text-gray-500 mt-1">Managed via ChatBot</p>
-                    </div>
-                </div>
-
-                {/* Main Content Area */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-96">
-                    <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-center">
-                        <div className="text-center text-gray-400">
-                            <p className="text-lg">Health Timeline Visualization</p>
-                            <p className="text-sm">(Coming Soon)</p>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-                        <div className="space-y-3">
-                            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-teal-50 hover:text-teal-700 transition font-medium text-gray-700">
-                                + Add new vital reading
-                            </button>
-                            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-teal-50 hover:text-teal-700 transition font-medium text-gray-700">
-                                + Book Appointment
-                            </button>
-                            <button className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-teal-50 hover:text-teal-700 transition font-medium text-gray-700">
-                                Request Report Analysis
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <ChatBot />
-        </div>
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-muted-foreground">No user found. Please log in again.</div>
+      </div>
     );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  // Doctor Dashboard
+  if (isDoctorUser(user)) {
+    return <DoctorDashboard patients={patientsList} doctor={user as DoctorUser} />;
+  }
+
+  // Patient Dashboard
+  if (isPatientUser(user)) {
+    const patientUser = user as PatientUser;
+    return (
+      <PatientDashboard
+        patientId={patientUser.patientDataId}
+        user={patientUser}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="text-destructive">Unknown user role. Please contact support.</div>
+    </div>
+  );
 }

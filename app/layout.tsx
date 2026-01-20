@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 
-const inter = Inter({ subsets: ["latin"] });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Swasthya Seva - Smart Healthcare",
-  description: "Your personal AI healthcare companion.",
+  title: "Swasthya Seva",
+  description: "Lifelong Digital Health Passport for Seamless Records & Monitoring Healthcare",
 };
 
 export default function RootLayout({
@@ -17,9 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Navbar />
-        {children}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
