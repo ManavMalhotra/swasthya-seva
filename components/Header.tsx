@@ -71,7 +71,13 @@ const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
         </Button>
 
         <div className="flex items-center gap-2">
-          <h1>Swasthya Seva</h1>
+          {/* <h1>Swasthya Seva</h1> */}
+          <Image
+            src={Logo}
+            alt="swasthya-seva Logo"
+            className="w-32 md:w-40 h-auto object-contain transition-all hover:opacity-90"
+            priority
+          />
         </div>
       </div>
 

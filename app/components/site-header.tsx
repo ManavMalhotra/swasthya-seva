@@ -15,14 +15,14 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" aria-label="swasthya-seva Home">
-          {/* <Image
+          <Image
             src={Logo}
             alt="swasthya-seva Logo"
             className="w-32 md:w-40 h-auto object-contain transition-all hover:opacity-90"
             priority
-          /> */}
+          />
 
-          <h1 className="text-2xl font-bold">💖 Swasthya Seva</h1>
+          {/* <h1 className="text-2xl font-bold">💖 Swasthya Seva</h1> */}
 
         </Link>
 
