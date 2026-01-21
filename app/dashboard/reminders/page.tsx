@@ -171,8 +171,8 @@ export default function RemindersPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="animate-spin text-purple-600" />
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="text-purple-600 animate-spin" />
       </div>
     )
   }
@@ -313,6 +313,10 @@ export default function RemindersPage() {
     if (!medicineName || times.length === 0)
       return alert("Add medicine name and at least one time.");
 
+    if (!everyDay && weekdays.length === 0) {
+      return alert("Please select at least one weekday.");
+    }
+
     const payload: Partial<Reminder> = {
       medicineName,
       dosage,
@@ -445,10 +449,10 @@ export default function RemindersPage() {
   // Render
   // ------------------------------------------------------------------
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl p-6 mx-auto">
       {/* header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold flex items-center gap-3">
+        <h1 className="flex items-center gap-3 text-2xl font-semibold">
           <Bell className="text-purple-600" />
           Medication Reminders
 
@@ -463,14 +467,14 @@ export default function RemindersPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleTestNotification}
-            className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 border border-gray-300"
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
           >
             Test Notif
           </button>
 
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+            className="flex items-center gap-2 px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700"
           >
             <Plus size={16} /> Add Reminder
           </button>
@@ -481,7 +485,7 @@ export default function RemindersPage() {
       <div className="space-y-6">
         {/* Upcoming */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Upcoming</h2>
+          <h2 className="mb-3 text-lg font-semibold text-gray-700">Upcoming</h2>
           <div className="space-y-3">
             {reminders.filter((r) => r.status === "upcoming").length === 0 ? (
               <p className="text-gray-500">No upcoming reminders.</p>
@@ -491,7 +495,7 @@ export default function RemindersPage() {
                 .map((r) => (
                   <div
                     key={r.id}
-                    className="p-4 bg-white rounded-lg shadow flex items-center justify-between"
+                    className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
                   >
                     <div>
                       <div className="flex items-center gap-3">
@@ -513,7 +517,7 @@ export default function RemindersPage() {
                       <button
                         title="Edit"
                         onClick={() => openEditModal(r)}
-                        className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
+                        className="p-2 text-gray-500 transition-colors rounded-md hover:bg-gray-100"
                       >
                         <Edit2 size={16} />
                       </button>
@@ -521,7 +525,7 @@ export default function RemindersPage() {
                       <button
                         title="Delete"
                         onClick={() => deleteReminder(r)}
-                        className="p-2 rounded-md hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors"
+                        className="p-2 text-gray-500 transition-colors rounded-md hover:bg-red-50 hover:text-red-500"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -539,7 +543,7 @@ export default function RemindersPage() {
 
                       <button
                         onClick={() => markCompleted(r)}
-                        className="px-3 py-1 rounded-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-colors flex items-center gap-1"
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white transition-colors bg-green-600 rounded-full hover:bg-green-700"
                       >
                         <Check size={14} /> Done
                       </button>
@@ -552,7 +556,7 @@ export default function RemindersPage() {
 
         {/* Missed */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Missed</h2>
+          <h2 className="mb-3 text-lg font-semibold text-gray-700">Missed</h2>
           <div className="space-y-3">
             {reminders.filter((r) => r.status === "missed").length === 0 ? (
               <p className="text-gray-500">No missed reminders.</p>
@@ -562,7 +566,7 @@ export default function RemindersPage() {
                 .map((r) => (
                   <div
                     key={r.id}
-                    className="p-4 bg-white rounded-lg shadow flex items-center justify-between"
+                    className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
                   >
                     <div className="flex items-center gap-3">
                       <XCircle className="text-red-500" />
@@ -589,7 +593,7 @@ export default function RemindersPage() {
                             status: "upcoming",
                           })
                         }
-                        className="px-3 py-1 rounded-full bg-yellow-500 text-white text-sm"
+                        className="px-3 py-1 text-sm text-white bg-yellow-500 rounded-full"
                       >
                         Mark Upcoming
                       </button>
@@ -602,7 +606,7 @@ export default function RemindersPage() {
 
         {/* Completed */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">
+          <h2 className="mb-3 text-lg font-semibold text-gray-700">
             Completed
           </h2>
           <div className="space-y-3">
@@ -614,7 +618,7 @@ export default function RemindersPage() {
                 .map((r) => (
                   <div
                     key={r.id}
-                    className="p-4 bg-white rounded-lg shadow flex items-center justify-between"
+                    className="flex items-center justify-between p-4 bg-white rounded-lg shadow"
                   >
                     <div className="flex items-center gap-3">
                       <Clock className="text-green-600" />
@@ -644,8 +648,8 @@ export default function RemindersPage() {
 
       {/* Add / Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
                 {editing ? "Edit Reminder" : "Add Reminder"}
@@ -661,13 +665,13 @@ export default function RemindersPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="text-sm text-gray-700">Medicine name</label>
                 <input
                   value={medicineName}
                   onChange={(e) => setMedicineName(e.target.value)}
-                  className="w-full border rounded-md p-2 mt-1"
+                  className="w-full p-2 mt-1 border rounded-md"
                 />
               </div>
 
@@ -678,7 +682,7 @@ export default function RemindersPage() {
                 <input
                   value={dosage}
                   onChange={(e) => setDosage(e.target.value)}
-                  className="w-full border rounded-md p-2 mt-1"
+                  className="w-full p-2 mt-1 border rounded-md"
                   placeholder="e.g. 500 mg"
                 />
               </div>
@@ -694,7 +698,7 @@ export default function RemindersPage() {
                   }
                   type="number"
                   min={1}
-                  className="w-full border rounded-md p-2 mt-1"
+                  className="w-full p-2 mt-1 border rounded-md"
                   placeholder="e.g. 5"
                 />
               </div>
@@ -729,22 +733,20 @@ export default function RemindersPage() {
                     {!everyDay && (
                       <div className="grid grid-cols-4 gap-2 mt-2">
                         {weekdaysList.map((d) => (
-                          <label
+                          <button
                             key={d}
-                            className={`p-2 border rounded-md text-center cursor-pointer ${weekdays.includes(d)
-                              ? "bg-purple-600 text-white"
-                              : ""
+                            type="button"
+                            className={`p-2 border rounded-md text-center text-sm font-medium transition-colors ${weekdays.includes(d)
+                              ? "bg-purple-600 text-white border-purple-600"
+                              : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                               }`}
-                            onClick={() => toggleWeekday(d)}
+                            onClick={(e) => {
+                              e.preventDefault(); // Prevent any parent form submission quirks
+                              toggleWeekday(d);
+                            }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={weekdays.includes(d)}
-                              readOnly
-                              className="hidden"
-                            />
-                            <div className="text-sm">{d}</div>
-                          </label>
+                            {d}
+                          </button>
                         ))}
                       </div>
                     )}
@@ -758,7 +760,7 @@ export default function RemindersPage() {
                   Dose frequency / Times
                 </label>
 
-                <div className="mt-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
                   <button
                     className={`px-3 py-1 rounded-md border ${preset === "once" ? "bg-purple-600 text-white" : ""
                       }`}
@@ -801,7 +803,7 @@ export default function RemindersPage() {
                         type="time"
                         value={t}
                         onChange={(e) => updateTimeSlot(idx, e.target.value)}
-                        className="border rounded-md p-2"
+                        className="p-2 border rounded-md"
                       />
                       <button
                         className="px-3 py-1 bg-gray-200 rounded-md"
@@ -825,7 +827,7 @@ export default function RemindersPage() {
             </div>
 
             {/* actions */}
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => {
                   setShowModal(false);
@@ -837,7 +839,7 @@ export default function RemindersPage() {
               </button>
               <button
                 onClick={saveReminder}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md"
+                className="px-4 py-2 text-white bg-purple-600 rounded-md"
               >
                 {editing ? "Save changes" : "Add reminder"}
               </button>
